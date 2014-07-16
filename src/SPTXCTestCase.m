@@ -139,7 +139,19 @@
 
 - (void)recordFailureWithDescription:(NSString *)description inFile:(NSString *)filename atLine:(NSUInteger)lineNumber expected:(BOOL)expected {
   SPTXCTestCase *currentTestCase = SPTCurrentTestCase;
-  [currentTestCase.spt_run recordFailureInTest:currentTestCase withDescription:description inFile:filename atLine:lineNumber expected:expected];
+  if ([currentTestCase.spt_run respondsToSelector:@selector(recordFailureWithDescription:inFile:atLine:expected:)]) {
+      [currentTestCase.spt_run recordFailureWithDescription:description inFile:filename atLine:lineNumber expected:expected];
+  } else {
+      SEL sel = @selector(recordFailureInTest:withDescription:inFile:atLine:expected:);
+      NSInvocation *inv = [NSInvocation invocationWithMethodSignature:[currentTestCase.spt_run methodSignatureForSelector:sel]];
+      [inv setSelector:sel];
+      [inv setTarget:currentTestCase.spt_run];
+      [inv setArgument:&description atIndex:2];
+      [inv setArgument:&filename atIndex:3];
+      [inv setArgument:&lineNumber atIndex:4];
+      [inv setArgument:&expected atIndex:5];
+      [inv invoke];
+  }
 }
 
 - (void)performTest:(XCTestRun *)run {
